@@ -1,52 +1,26 @@
-install.packages("data.tree")
-install.packages("jsonlite")
-install.packages("magrittr")
-library(data.tree)
-library(jsonlite)
-library(magrittr)
-
-#######################################
-#                                     #
-#           EXAMPLE CODE              #
-#                                     #
-#######################################
-
-reposLoL <- fromJSON("https://api.github.com/users/hadley/repos", simplifyDataFrame = FALSE)
-
-library(data.tree)
-repos <- as.Node(reposLoL)
-print(repos, "id", "login")
-
-#convert this to a data.frame
-reposdf <- repos %>% ToDataFrameTable(ownerId = "id", 
-                                  "login", 
-                                  repoName = function(x) x$parent$name, #relative to the leaf
-                                  fullName = "full_name", #unambiguous values are inherited from ancestors
-                                  repoId = function(x) x$parent$id,
-                                  "fork", 
-                                  "type")
-
-reposdf
 #######################################
 #                                     #
 #             Real CODE               #
 #                                     #
 #######################################
 
-RawSideWalkData <- fromJSON("https://sidewalk.umiacs.umd.edu/v1/access/score/streets?lat1=38.899&lng1=-77.008&lat2=38.920&lng2=-76.971", simplifyDataFrame = FALSE)
+library(rjson)
+# grab the data
+raw_data <- getURL("https://sidewalk.umiacs.umd.edu/v1/access/features?lat1=38.892915&lng1=-76.909855&lat2=38.934588&lng2=-77.118938")
+# Then covert from JSON into a list in R
+data <- fromJSON(raw_data)
+data
 
-library(data.tree)
-SideWalk <- as.Node(RawSideWalkData)
-print(SideWalk, "score", "significance") #to test
+data$features[[101]]["geometry"]
+data$features[[101]]["properties"]
 
-#convert this to a data.frame
-SideWalk_Final <- SideWalk %>% ToDataFrameTable(streetEdgeId = "street_edge_id", 
-                                      "score", 
-                                      NoCurbRamp = function(x) x$feature$NoCurbRamp,
-                                      CurbRamp = function(x) x$feature$CurbRamp,
-                                      Obstacle = function(x) x$feature$Obstacle,
-                                      SurfaceProblem = function(x) x$feature$SurfaceProblem,
-                                      Coordinates = function(x) x$geometry$coordinates, #relative to the leaf
-                                      "type")
 
-SideWalk_Final
+SideWalk.data <- data.frame("type"=character(), "Lat_coords"=numeric(),"Lng_coords"=numeric(), "label"=character(), "panorama"=character(),stringsAsFactors = FALSE)
+for (i in 1:14133){
+  type <- data$features[[i]]["geometry"]$geometry$type
+  Lng_coords <- data$features[[i]]["geometry"]$geometry$coordinates[1]
+  Lat_coords <- data$features[[i]]["geometry"]$geometry$coordinates[2]
+  label <- data$features[[i]]["properties"]$properties$label_type
+  panorama <- data$features[[i]]["properties"]$properties$panorama_id
+  SideWalk.data <- rbind( SideWalk.data, data.frame(type, Lat_coords,Lng_coords, label, panorama))
+}
