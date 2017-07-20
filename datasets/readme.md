@@ -1,7 +1,6 @@
 Contains data sets for project sidewalk
 
 CRIME STAT BREAKOUT
-
 7501-10000 : BILL
 10001-12500 : NATHAN
 12501-15000 : CLAIRE
