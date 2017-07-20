@@ -1,5 +1,8 @@
 Contains data sets for project sidewalk
 
+file name convention : geocoded_#####-#####
+
+
 CRIME STAT BREAKOUT
 
 7502-10001 : BILL
