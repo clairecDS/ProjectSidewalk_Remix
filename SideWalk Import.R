@@ -271,57 +271,114 @@ Train.Occlusion <- Train5[ , !(names(Train5) %in% drops5)]
 Train.SurfaceProblem <- Train6[ , !(names(Train6) %in% drops6)]
 Train.CurbRamp <- Train7[ , !(names(Train7) %in% drops7)]
 
-install.packages("randomForest")
-install.packages("miscTools")
+#install.packages("randomForest")
+#install.packages("miscTools")
 library(randomForest)
 library(miscTools)
+library(mlbench)
+library(caret)
 
 # Train on Entire Crime Data Set and ONE Sidewalk column
 cols <- names(Train.Other)[1:13]
-system.time(clf <- randomForest(factor(Other) ~ ., data=Train.Other[,cols], ntree=20, nodesize=5, mtry=9))
+clf <- randomForest(factor(Other) ~ ., data=Train.Other[,cols], ntree=20, nodesize=5, mtry=9, importance=TRUE)
+clf$importance
+importance(clf, type = 2)
+importance(clf, type = 1, scale = FALSE)
+varImpPlot(clf, type = 2)
+varImpPlot(clf, type = 1)
+as.data.frame(clf$importance)[1]
+(as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
 #table(Test.Other$Other, predict(clf, Test.Other[cols]))
 sum(Test.Other$Other==predict(clf, Test.Other[cols])) / nrow(Test.Other)
 
 
 cols <- names(Train.NoSidewalk)[1:13]
-system.time(clf <- randomForest(factor(NoSidewalk) ~ ., data=Train.NoSidewalk[,cols], ntree=20, nodesize=5, mtry=9))
+system.time(clf <- randomForest(factor(NoSidewalk) ~ ., data=Train.NoSidewalk[,cols], ntree=20, nodesize=5, mtry=9, importance=TRUE))
+clf$importance
+importance(clf, type = 2)
+importance(clf, type = 1, scale = FALSE)
+varImpPlot(clf, type = 2)
+varImpPlot(clf, type = 1)
+as.data.frame(clf$importance)[1]
+(as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
 #table(Test.NoSidewalk$NoSidewalk, predict(clf, Test.NoSidewalk[cols]))
 sum(Test.NoSidewalk$NoSidewalk==predict(clf, Test.NoSidewalk[cols])) / nrow(Test.NoSidewalk)
 
 
 cols <- names(Train.Obstacle)[1:13]
-system.time(clf <- randomForest(factor(Obstacle) ~ ., data=Train.Obstacle[,cols], ntree=20, nodesize=5, mtry=9))
+system.time(clf <- randomForest(factor(Obstacle) ~ ., data=Train.Obstacle[,cols], ntree=20, nodesize=5, mtry=9, importance=TRUE))
+clf$importance
+importance(clf, type = 2)
+importance(clf, type = 1, scale = FALSE)
+varImpPlot(clf, type = 2)
+varImpPlot(clf, type = 1)
+as.data.frame(clf$importance)[1]
+(as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
 #table(Test.Obstacle$Obstacle, predict(clf, Test.Obstacle[cols]))
 sum(Test.Obstacle$Obstacle==predict(clf, Test.Obstacle[cols])) / nrow(Test.Obstacle)
 
 
 cols <- names(Train.NoCurbRamp)[1:13]
-system.time(clf <- randomForest(factor(NoCurbRamp) ~ ., data=Train.NoCurbRamp[,cols], ntree=20, nodesize=5, mtry=9))
+system.time(clf <- randomForest(factor(NoCurbRamp) ~ ., data=Train.NoCurbRamp[,cols], ntree=20, nodesize=5, mtry=9, importance=TRUE))
+clf$importance
+importance(clf, type = 2)
+importance(clf, type = 1, scale = FALSE)
+varImpPlot(clf, type = 2)
+varImpPlot(clf, type = 1)
+as.data.frame(clf$importance)[1]
+(as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
 #table(Test.NoCurbRamp$NoCurbRamp, predict(clf, Test.NoCurbRamp[cols]))
 sum(Test.NoCurbRamp$NoCurbRamp==predict(clf, Test.NoCurbRamp[cols])) / nrow(Test.NoCurbRamp)
 
 
 cols <- names(Train.Occlusion)[1:13]
-system.time(clf <- randomForest(factor(Occlusion) ~ ., data=Train.Occlusion[,cols], ntree=20, nodesize=5, mtry=9))
+system.time(clf <- randomForest(factor(Occlusion) ~ ., data=Train.Occlusion[,cols], ntree=20, nodesize=5, mtry=9, importance=TRUE))
+clf$importance
+importance(clf, type = 2)
+importance(clf, type = 1, scale = FALSE)
+varImpPlot(clf, type = 2)
+varImpPlot(clf, type = 1)
+as.data.frame(clf$importance)[1]
+(as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
 #table(Test.Occlusion$Occlusion, predict(clf, Test.Occlusion[cols]))
 sum(Test.Occlusion$Occlusion==predict(clf, Test.Occlusion[cols])) / nrow(Test.Occlusion)
 
 
 cols <- names(Train.SurfaceProblem)[1:13]
-system.time(clf <- randomForest(factor(SurfaceProblem) ~ ., data=Train.SurfaceProblem[,cols], ntree=20, nodesize=5, mtry=9))
+system.time(clf <- randomForest(factor(SurfaceProblem) ~ ., data=Train.SurfaceProblem[,cols], ntree=20, nodesize=5, mtry=9, importance=TRUE))
+clf$importance
+importance(clf, type = 2)
+importance(clf, type = 1, scale = FALSE)
+varImpPlot(clf, type = 2)
+varImpPlot(clf, type = 1)
+as.data.frame(clf$importance)[1]
+(as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
 #table(Test.SurfaceProblem$SurfaceProblem, predict(clf, Test.SurfaceProblem[cols]))
 sum(Test.SurfaceProblem$SurfaceProblem==predict(clf, Test.SurfaceProblem[cols])) / nrow(Test.SurfaceProblem)
 
 
 cols <- names(Train.CurbRamp)[1:13]
-system.time(clf <- randomForest(factor(CurbRamp) ~ ., data=Train.CurbRamp[,cols], ntree=20, nodesize=5, mtry=9))
+system.time(clf <- randomForest(factor(CurbRamp) ~ ., data=Train.CurbRamp[,cols], ntree=20, nodesize=5, mtry=9, importance=TRUE))
+clf$importance
+importance(clf, type = 2)
+importance(clf, type = 1, scale = FALSE)
+varImpPlot(clf, type = 2)
+varImpPlot(clf, type = 1)
+as.data.frame(clf$importance)[1]
+(as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
 #table(Test.CurbRamp$CurbRamp, predict(clf, Test.CurbRamp[cols]))
 sum(Test.CurbRamp$CurbRamp==predict(clf, Test.CurbRamp[cols])) / nrow(Test.CurbRamp)
 
 # Train On Entire Merged Data set
 cols <- names(Final_Data_Train)[1:20]
-system.time(clf <- randomForest(factor(NoCurbRamp) ~ ., data=Final_Data_Train[,cols], ntree=20, nodesize=5, mtry=9))
-
+system.time(clf <- randomForest(factor(NoCurbRamp) ~ ., data=Final_Data_Train[,cols], ntree=20, nodesize=5, mtry=9, importance=TRUE))
+clf$importance
+importance(clf, type = 2)
+importance(clf, type = 1, scale = FALSE)
+varImpPlot(clf, type = 2)
+varImpPlot(clf, type = 1)
+as.data.frame(clf$importance)[1]
+(as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
 
 # Predict "NoCurbRamp"
 #table(Final_Data_Test$NoCurbRamp, predict(clf, Final_Data_Test[cols]))
@@ -351,23 +408,7 @@ sum(Final_Data_Test$CurbRamp==predict(clf, Final_Data_Test[cols])) / nrow(Final_
 #table(Final_Data_Test$SurfaceProblem, predict(clf, Final_Data_Test[cols]))
 sum(Final_Data_Test$SurfaceProblem==predict(clf, Final_Data_Test[cols])) / nrow(Final_Data_Test)
 
-##################################### UNTESTED CODE BELOW THIS LINE ############################################
+
 ################################################################################################################
 
-library(randomForest)
-library(miscTools)
-library(ggplot2)
 
-cor(Final_Data_Train)
-rf <- randomForest(alcohol ~ ., data=train[,cols], ntree=20)
-
-(r2 <- rSquared(test$alcohol, test$alcohol - predict(rf, test[,cols])))
-# [1] 0.6481
-(mse <- mean((test$alcohol - predict(rf, test[,cols]))^2))
-# [1] 0.6358
-
-p <- ggplot(aes(x=actual, y=pred),
-            data=data.frame(actual=test$alcohol, pred=predict(rf, test[,cols])))
-p + geom_point() +
-  geom_abline(color="red") +
-  ggtitle(paste("RandomForest Regression in R r^2=", r2, sep=""))
