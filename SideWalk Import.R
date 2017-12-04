@@ -3,9 +3,19 @@
 #             Real CODE               #
 #                                     #
 #######################################
-install.packages('RJSONIO')
-install.packages('RCurl')
-install.packages('rjson')
+if (!require('RJSONIO')){install.packages('RJSONIO')} 
+if (!require('RCurl')){install.packages('RCurl')} 
+if (!require('rjson')){install.packages('rjson')}
+if (!require('randomForest')){install.packages('randomForest')} 
+if (!require('miscTools')){install.packages('miscTools')} 
+if (!require('mlbench')){install.packages('mlbench')} 
+if (!require('caret')){install.packages('caret')} 
+
+library(randomForest)
+library(miscTools)
+library(mlbench)
+library(caret)
+library(ROCR)
 library(RJSONIO)
 library(RCurl)
 library(rjson)
@@ -13,12 +23,13 @@ library(rjson)
 raw_data <- getURL("https://sidewalk.umiacs.umd.edu/v1/access/features?lat1=38.999037&lng1=-77.150039&lat2=38.799492&lng2=-76.907179")
 # Then covert from JSON into a list in R
 data <- fromJSON(raw_data)
-data
 
+# Test to see how to read the JSON file.
 data$features[[101]]["geometry"]
 data$features[[101]]["properties"]$properties['label_type']
 
 
+# Create a table out of the JSON formatted data.
 SideWalk.data <- data.frame("type"=character(), "Lat_coords"=numeric(),"Lng_coords"=numeric(), "label"=character(), "panorama"=character(),stringsAsFactors = FALSE)
 for (i in 1:61420){
   type <- data$features[[i]]["geometry"]$geometry$type
@@ -30,7 +41,7 @@ for (i in 1:61420){
 }
 
 write.csv(SideWalk.data, file = 'F:\\School\\Southern Methodist University\\MSDS 6120 Capstone\\SideWalkData\\SideWalkData_10.12.17.csv')
-SideWalk.data <- read.csv('F:\\School\\Southern Methodist University\\MSDS 6120 Capstone\\SideWalkData\\SideWalkData_10.12.17.csv', stringsAsFactors = FALSE)
+#SideWalk.data <- read.csv('F:\\School\\Southern Methodist University\\MSDS 6120 Capstone\\SideWalkData\\SideWalkData_10.12.17.csv', stringsAsFactors = FALSE)
 
 
 #######################################
@@ -39,7 +50,7 @@ SideWalk.data <- read.csv('F:\\School\\Southern Methodist University\\MSDS 6120 
 #                                     #
 #######################################
 
-# The following code creates a 50x50 grid over Washington DC
+# The following code creates a 50x50 (or 25x25 if you change the 'Width' variable) grid over Washington DC
 # and aggregates each label_type per square.
 # Dimensions for the grid are the same lat/lon from the API call above
 
@@ -60,7 +71,7 @@ lonDelta
 #   Create Training and Test Data     #
 #######################################
 
-#Sample Indexes
+#Sample Indexes (80/20 split)
 indexes = sample(1:nrow(SideWalk.data), size=0.2*nrow(SideWalk.data))
 
 # Split data
@@ -70,19 +81,19 @@ Sidewalk.train = SideWalk.data[-indexes,]
 dim(Sidewalk.train)
 
 # TRAINING DATA FOR SIDEWALK
-
+# Aggregate the sidewalk status labels for each of the grid squares. 
 Sidewalk.train.Agg <- data.frame("Block_Id"=integer(), "Other"=integer(),"NoSidewalk"=integer(),"SurfaceProblem"=integer(),"Obstacle"=integer(),"NoCurbRamp"=integer(),"Occlusion"=integer(),"CurbRamp"=integer(),stringsAsFactors = FALSE)
 for (i in 1:Width){
   for(j in 1:Width){
     Block_Id <- (i*Width)-Width+j
     
-    newdata <- subset(Sidewalk.train, Lat_coords < (lat1-latDelta*(j-1)), 
+    newdata <- subset(Sidewalk.train, Lat_coords < (lat1-latDelta*(j-1)), #Below a given latitude line
+                      select=c(Lat_coords, Lng_coords,label_type))    
+    newdata2 <- subset(newdata, Lat_coords >(lat1-latDelta*(j)),          #Above a given latitude line
                       select=c(Lat_coords, Lng_coords,label_type))
-    newdata2 <- subset(newdata, Lat_coords >(lat1-latDelta*(j)), 
-                      select=c(Lat_coords, Lng_coords,label_type))
-    newdata3 <- subset(newdata2, Lng_coords > (lon1-lonDelta*(i-1)), 
+    newdata3 <- subset(newdata2, Lng_coords > (lon1-lonDelta*(i-1)),      #To the right of a given longitude line
                        select=c(Lat_coords, Lng_coords,label_type))
-    newdata4 <- subset(newdata3, Lng_coords < (lon1-lonDelta*(i)), 
+    newdata4 <- subset(newdata3, Lng_coords < (lon1-lonDelta*(i)),        #To the left of a given longitude line
                        select=c(Lat_coords, Lng_coords,label_type))
     
     Other <-length(which(newdata4$label_type == "Other"))
@@ -227,13 +238,13 @@ sum(SideWalk.Agg$NoSidewalk)
 
 #######################################
 #                                     #
-#         MACHINE LEARNING            #
+#             Data Prep               #
 #                                     #
 #######################################
 Final_Data_Train <-merge(Sidewalk.train.Agg, Train.Crime.Agg, by = "Block_Id")
 Final_Data_Test <-merge(Sidewalk.test.Agg, Test.Crime.Agg, by = "Block_Id")
-write.csv(Final_Data_Train, "\\Users\\natha_000\\Desktop\\Crime GeoCodes\\Final_Training_Sidewalk_Data-0.csv", row.names=FALSE)
-write.csv(Final_Data_Test, "\\Users\\natha_000\\Desktop\\Crime GeoCodes\\Final_Testing_Sidewalk_Data-0.csv", row.names=FALSE)
+write.csv(Final_Data_Train, "\\Users\\natha_000\\Desktop\\Crime GeoCodes\\Final_Training_Sidewalk_Data-25.csv", row.names=FALSE)
+write.csv(Final_Data_Test, "\\Users\\natha_000\\Desktop\\Crime GeoCodes\\Final_Testing_Sidewalk_Data-25.csv", row.names=FALSE)
 
 Test1 <- Final_Data_Test
 Test2 <- Final_Data_Test
@@ -265,6 +276,9 @@ drops6 <- c("Block_Id","Other","NoSidewalk","Obstacle","NoCurbRamp","Occlusion",
 drops16 <- "SurfaceProblem"
 drops7 <- c("Block_Id","Other","NoSidewalk","Obstacle","NoCurbRamp","Occlusion","SurfaceProblem")
 drops17 <- "CurbRamp"
+
+#Create a binary response variable for both test and train data sets.
+#The commented out code allows for a tertiary response variable.
 
 Test.Other <- Test1[ , !(names(Test1) %in% drops1)]
 #Test.Other$Other.C <- ifelse(Test.Other$Other == 0, 0, ifelse((Test.Other$Other>=1)&(Test.Other$Other<=5),1,2))
@@ -325,21 +339,6 @@ Train.CurbRamp$CurbRamp.C <- ifelse(Train.CurbRamp$CurbRamp == 0, 0, 1)
 Train.CurbRamp <- Train.CurbRamp[ , !(names(Train.CurbRamp) %in% drops17)]
 
 
-#install.packages("randomForest")
-#install.packages("miscTools")
-#install.packages("party")
-#install.packages("ROCR")
-#install.packages("mlbench")
-#install.packages("caret")
-#install.packages("car")
-#install.packages("stringi")
-#install.packages("e1071")
-library(randomForest)
-library(miscTools)
-library(mlbench)
-library(caret)
-library(ROCR)
-
 # Train on Entire Crime Data Set and ONE Sidewalk column
 
 ##################
@@ -375,7 +374,7 @@ confusionMatrix(p2, Test.Other$Other.C)
 # No. of Trees
 hist(treesize(clf), main = "No. of Nodes for the Trees", col = "green")
 #Var Importance
-varImpPlot(clf, sort = T, n.var = 9,main = "Top 9 - Variable Importance")
+varImpPlot(clf, sort = T, n.var = 9,main = "Crime Data - 'Other' Variable Importance")
 importance(clf)
 
 # Var actually used
@@ -402,7 +401,7 @@ length(pred2)
 #1. Area under curve
 auc = performance(perf,measure="tpr", x.measure="fpr")
 plot(auc)
-title(main = 'ROC for Other')
+title(main = 'ROC for Other-25')
 
 # Plot partial dependence of each predictor
 par(mfrow = c(3, 5), mar = c(2, 2, 2, 2), pty = "s");
@@ -440,15 +439,15 @@ print(mtry)
 print(best.m)
 clf <- randomForest(factor(NoSidewalk.C) ~ ., data=Train.NoSidewalk[,cols], mtry=best.m, ntree=500,importance=TRUE, proximity = TRUE, cutoff=c(.99,.01))
 print(clf)
-
+plot(clf, main="NoSidewalk RandomForest Error")
 # Prediction & Confusion Matrix - Test Data round 1
 p2 <- predict(clf,Test.NoSidewalk)
 confusionMatrix(p2, Test.NoSidewalk$NoSidewalk.C)
 
 # No. of Trees
-hist(treesize(clf), main = "No. of Nodes for the Trees", col = "green")
+hist(treesize(clf), main = "NoSidewalk-25 No. of Nodes for the Trees", col = "green")
 #Var Importance
-varImpPlot(clf, sort = T, n.var = 9,main = "Top 9 - Variable Importance")
+varImpPlot(clf, sort = T, n.var = 9,main = "Crime Data - 'NoSidewalk' Variable Importance")
 importance(clf)
 
 # Var actually used
@@ -475,7 +474,7 @@ length(pred2)
 #1. Area under curve
 auc = performance(perf,measure="tpr", x.measure="fpr")
 plot(auc)
-title(main = 'ROC Graph for NoSidewalk')
+title(main = 'ROC Graph for NoSidewalk-25')
 
 # Plot partial dependence of each predictor
 par(mfrow = c(3, 5), mar = c(2, 2, 2, 2), pty = "s");
@@ -487,7 +486,9 @@ for (i in 1:(ncol(Train.NoSidewalk) - 1))
 
 
 # Importances scaled to 100
-(as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
+imp <- (as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
+barplot(t(imp), main = "NoSidewalk-25 Importances")
+imp
 #table(Test.NoSidewalk$NoSidewalk, predict(clf, Test.NoSidewalk[cols]))
 sum(Test.NoSidewalk$NoSidewalk==predict(clf, Test.NoSidewalk[cols])) / nrow(Test.NoSidewalk)
 
@@ -510,15 +511,15 @@ print(mtry)
 print(best.m)
 clf <- randomForest(factor(Obstacle.C) ~ ., data=Train.Obstacle[,cols], mtry=best.m, ntree=500,importance=TRUE, proximity = TRUE, cutoff=c(.99,.01))
 print(clf)
-plot(clf)
+plot(clf, main="Obstacle-25 RandomForest Error")
 # Prediction & Confusion Matrix - Test Data round 1
 p2 <- predict(clf,Test.Obstacle)
 confusionMatrix(p2, Test.Obstacle$Obstacle.C)
 
 # No. of Trees
-hist(treesize(clf), main = "No. of Nodes for the Trees", col = "green")
+hist(treesize(clf), main = "Obstacle-25 No. of Nodes for the Trees", col = "green")
 #Var Importance
-varImpPlot(clf, sort = T, n.var = 9,main = "Top 9 - Variable Importance")
+varImpPlot(clf, sort = T, n.var = 9,main = "Crime Data - 'Obstacle' Variable Importance")
 importance(clf)
 
 # Var actually used
@@ -545,7 +546,7 @@ length(pred2)
 #1. Area under curve
 auc = performance(perf,measure="tpr", x.measure="fpr")
 plot(auc)
-title(main = 'ROC Graph for Obstacle')
+title(main = 'ROC Graph for Obstacle-25')
 
 # Plot partial dependence of each predictor
 par(mfrow = c(3, 5), mar = c(2, 2, 2, 2), pty = "s");
@@ -557,7 +558,9 @@ for (i in 1:(ncol(Train.Obstacle) - 1))
 
 
 # Importances scaled to 100
-(as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
+imp2 <- (as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1])
+barplot(t(imp2), main = "Obstacle-25 Importances")
+imp2
 #table(Test.NoSidewalk$NoSidewalk, predict(clf, Test.NoSidewalk[cols]))
 sum(Train.Obstacle$Obstacle.C==predict(clf, Train.Obstacle[cols])) / nrow(Train.Obstacle)
 
@@ -578,7 +581,7 @@ p2 <- predict(clf,Test.NoCurbRamp)
 confusionMatrix(p2, Test.NoCurbRamp$NoCurbRamp.C)
 
 # Error rate of Random Forest
-plot(clf)
+plot(clf, main="NoCurbRamp-25 RandomForest Error")
 
 # Tune mtry
 mtry <- tuneRF(Train.NoCurbRamp[-10],Train.NoCurbRamp$NoCurbRamp.C, 
@@ -593,15 +596,17 @@ print(best.m)
 
 clf <- randomForest(factor(NoCurbRamp.C) ~ ., data=Train.NoCurbRamp, mtry=best.m, ntree=500, importance=TRUE,proximity = TRUE, cutoff = c(.99, .01))
 clf
+# Error rate of Random Forest
+plot(clf, main="NoCurbRamp-25 RandomForest Error")
 # Prediction & Confusion Matrix - Test Data round 1
 p2 <- predict(clf,Test.NoCurbRamp)
 confusionMatrix(p2, Test.NoCurbRamp$NoCurbRamp.C)
 
 # No. of Trees
-hist(treesize(clf), main = "No. of Nodes for the Trees for NoCurbRamp", col = "green")
+hist(treesize(clf), main = "NoCurbRamp No. of Nodes for the Trees", col = "green")
 
 #Var Importance
-varImpPlot(clf, sort = T, n.var = 9,main = "Top 9 - Variable Importance")
+varImpPlot(clf, sort = T, n.var = 9,main = "Crime Data - 'NoCurbRamp' Variable Importance")
 importance(clf)
 
 # Var actually used
@@ -634,7 +639,9 @@ auc = performance(perf,measure="tpr", x.measure="fpr")
 plot(auc)
 title(main = 'ROC Graph for NoCurbRamp')
 # Importances scaled to 100
-(as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
+imp3 <- (as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1])
+barplot(t(imp2), main = "NoCurbRamp-25 Importances")
+imp3
 #table(Test.NoCurbRamp$NoCurbRamp, predict(clf, Test.NoCurbRamp[cols]))
 sum(Test.NoCurbRamp$NoCurbRamp==predict(clf, Test.NoCurbRamp[cols])) / nrow(Test.NoCurbRamp)
 
@@ -659,16 +666,16 @@ print(mtry)
 print(best.m)
 clf <- randomForest(factor(Occlusion.C) ~ ., data=Train.Occlusion[,cols], mtry=best.m, ntree=500,importance=TRUE, proximity = TRUE, cutoff=c(.99, .01))
 print(clf)
-plot(clf)
+plot(clf, main="Occlusion-25 RandomForest Error")
 # Prediction & Confusion Matrix - Test Data round 1
 p2 <- predict(clf,Test.Occlusion)
 confusionMatrix(p2, Test.Occlusion$Occlusion.C)
 
 
 # No. of Trees
-hist(treesize(clf), main = "No. of Nodes for the Trees for Occlusion", col = "green")
+hist(treesize(clf), main = "Occlusion-25 No. of Nodes for the Trees", col = "green")
 #Var Importance
-varImpPlot(clf, sort = T, n.var = 9,main = "Top 9 - Variable Importance")
+varImpPlot(clf, sort = T, n.var = 9,main = "Crime Data - 'Occlusion-25' Variable Importance")
 importance(clf)
 
 # Var actually used
@@ -695,7 +702,7 @@ length(pred2)
 #1. Area under curve
 auc = performance(perf,measure="tpr", x.measure="fpr")
 plot(auc)
-title(main = 'ROC Graph for Occlusion')
+title(main = 'ROC Graph for Occlusion-25')
 
 # Plot partial dependence of each predictor
 par(mfrow = c(3, 5), mar = c(2, 2, 2, 2), pty = "s");
@@ -707,7 +714,9 @@ for (i in 1:(ncol(Train.Occlusion) - 1))
 
 
 # Importances scaled to 100
-(as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
+imp4 <- (as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1])
+barplot(t(imp4), main = "Occlusion-25 Importances")
+imp4
 #table(Test.NoSidewalk$NoSidewalk, predict(clf, Test.NoSidewalk[cols]))
 sum(Train.Occlusion$Occlusion.C==predict(clf, Train.Occlusion[cols])) / nrow(Train.Occlusion)
 
@@ -734,15 +743,15 @@ print(mtry)
 print(best.m)
 clf <- randomForest(factor(SurfaceProblem.C) ~ ., data=Train.SurfaceProblem[,cols], mtry=best.m, ntree=500,importance=TRUE, proximity = TRUE, cutoff=c(.99, .01))
 print(clf)
-
+plot(clf, main="SurefaceProblem-25 RandomForest Error")
 # Prediction & Confusion Matrix - Test Data round 1
 p2 <- predict(clf,Test.SurfaceProblem)
 confusionMatrix(p2, Test.SurfaceProblem$SurfaceProblem.C)
 
 # No. of Trees
-hist(treesize(clf), main = "No. of Nodes for the Trees for SurfaceProblems", col = "green")
+hist(treesize(clf), main = "SurfaceProblems-25 No. of Nodes for the Trees", col = "green")
 #Var Importance
-varImpPlot(clf, sort = T, n.var = 9,main = "Top 9 - Variable Importance")
+varImpPlot(clf, sort = T, n.var = 9,main = "Crime Data - 'SurfaceProblem-25' Variable Importance")
 importance(clf)
 
 # Var actually used
@@ -781,7 +790,9 @@ for (i in 1:(ncol(Train.SurfaceProblem) - 1))
 
 
 # Importances scaled to 100
-(as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
+imp5 <- (as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
+barplot(t(imp5), main = "SurfaceProblem-25 Importances")
+imp5
 #table(Test.NoSidewalk$NoSidewalk, predict(clf, Test.NoSidewalk[cols]))
 sum(Train.SurfaceProblem$SurfaceProblem.C==predict(clf, Train.SurfaceProblem[cols])) / nrow(Train.SurfaceProblem)
                
@@ -807,15 +818,15 @@ print(best.m)
 
 clf <- randomForest(factor(CurbRamp.C) ~ ., data=Train.CurbRamp[,cols], mtry=best.m, ntree=500, importance=TRUE, proximity = TRUE, cutoff = c(.99, .01))
 print(clf)
-plot(clf, main='No. of trees with Minimum Error for CurbRamp')
+plot(clf, main="CurbRamp-25 RandomForest Error")
 # Prediction & Confusion Matrix - Test Data round 1
 p2 <- predict(clf,Test.CurbRamp)
 confusionMatrix(p2, Test.CurbRamp$CurbRamp.C)
 
 # No. of Trees
-hist(treesize(clf), main = "No. of Nodes for the Trees", col = "green")
+hist(treesize(clf), main = "CurbRamp-25 No. of Nodes for the Trees", col = "green")
 #Var Importance
-varImpPlot(clf, sort = T, n.var = 9,main = "Top 9 - Variable Importance")
+varImpPlot(clf, sort = T, n.var = 9,main = "Crime Data - 'CurbRamp-25' Variable Importance")
 importance(clf)
 
 # Var actually used
@@ -842,7 +853,7 @@ length(pred2)
 #1. Area under curve
 auc = performance(perf,measure="tpr", x.measure="fpr")
 plot(auc)
-title(main = 'ROC Graph for CurbRamp')
+title(main = 'ROC Graph for CurbRamp-25')
 # Plot partial dependence of each predictor
 par(mfrow = c(3, 5), mar = c(2, 2, 2, 2), pty = "s");
 for (i in 1:(ncol(Train.CurbRamp) - 1))
@@ -852,56 +863,13 @@ for (i in 1:(ncol(Train.CurbRamp) - 1))
 }
 
 # Importances scaled to 100
-(as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
+imp6 <- (as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
+barplot(t(imp6), main = "CurbRamp-25 Importances")
+imp6
 #table(Test.CurbRamp$CurbRamp.C, predict(clf, Test.CurbRamp[cols]))
 sum(Test.CurbRamp$CurbRamp.C==predict(clf, Test.CurbRamp[cols])) / nrow(Test.CurbRamp)
 
-# Train On Entire Merged Data set
-cols <- names(Final_Data_Train)[1:20]
-system.time(clf <- randomForest(factor(NoCurbRamp) ~ ., data=Final_Data_Train[,cols], ntree=20, nodesize=5, mtry=9, importance=TRUE, cutoff = c(.001, 1, 1)))
-clf$importance
-importance(clf, type = 2)
-importance(clf, type = 1, scale = FALSE)
-varImpPlot(clf, type = 2)
-varImpPlot(clf, type = 1)
-as.data.frame(clf$importance)[1]
-(as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1]) 
-
-# Predict "NoCurbRamp"
-#table(Final_Data_Test$NoCurbRamp, predict(clf, Final_Data_Test[cols]))
-sum(Final_Data_Test$NoCurbRamp==predict(clf, Final_Data_Test[cols])) / nrow(Final_Data_Test)
-
-# Predict "Obstacle"
-#table(Final_Data_Test$Obstacle, predict(clf, Final_Data_Test[cols]))
-sum(Final_Data_Test$Obstacle==predict(clf, Final_Data_Test[cols])) / nrow(Final_Data_Test)
-
-# Predict "NoSidewalk"
-#table(Final_Data_Test$NoSidewalk, predict(clf, Final_Data_Test[cols]))
-sum(Final_Data_Test$NoSidewalk==predict(clf, Final_Data_Test[cols])) / nrow(Final_Data_Test)
-
-# Predict "Occlusion"
-#table(Final_Data_Test$Occlusion, predict(clf, Final_Data_Test[cols]))
-sum(Final_Data_Test$Occlusion==predict(clf, Final_Data_Test[cols])) / nrow(Final_Data_Test)
-
-# Predict "Other"
-#table(Final_Data_Test$Other, predict(clf, Final_Data_Test[cols]))
-sum(Final_Data_Test$Other==predict(clf, Final_Data_Test[cols])) / nrow(Final_Data_Test)
-
-# Predict "CurbRamp"
-#table(Final_Data_Test$CurbRamp, predict(clf, Final_Data_Test[cols]))
-sum(Final_Data_Test$CurbRamp==predict(clf, Final_Data_Test[cols])) / nrow(Final_Data_Test)
-
-# Predict "SurfaceProblem"
-#table(Final_Data_Test$SurfaceProblem, predict(clf, Final_Data_Test[cols]))
-sum(Final_Data_Test$SurfaceProblem==predict(clf, Final_Data_Test[cols])) / nrow(Final_Data_Test)
 
 
 ################################################################################################################
 
-# Scatter Plots
-
-plot(Test1$NoSidewalk, Test1$ROBBERY, main="Scatterplot Example", 
-     xlab="sidewalk count ", ylab="Crime count ", pch=19)
-
-abline(lm(Test1$ROBBERY ~Test1$NoSidewalk), col="red") # regression line (y~x) 
-lines(lowess(Train.NoSidewalk$Train.NoSidewalk$BURGLARY), col="blue") # lowess line (x,y)
