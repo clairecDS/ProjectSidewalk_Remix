@@ -1,6 +1,6 @@
 #######################################
 #                                     #
-#             Real CODE               #
+#   Project Sidewalk Crime Analysis   #
 #                                     #
 #######################################
 if (!require('RJSONIO')){install.packages('RJSONIO')} 
