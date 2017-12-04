@@ -338,6 +338,11 @@ Train.CurbRamp <- Train7[ , !(names(Train7) %in% drops7)]
 Train.CurbRamp$CurbRamp.C <- ifelse(Train.CurbRamp$CurbRamp == 0, 0, 1)
 Train.CurbRamp <- Train.CurbRamp[ , !(names(Train.CurbRamp) %in% drops17)]
 
+#######################################
+#                                     #
+#     Random Forest Classification    #
+#                                     #
+#######################################
 
 # Train on Entire Crime Data Set and ONE Sidewalk column
 
@@ -612,8 +617,6 @@ importance(clf)
 # Var actually used
 varUsed(clf)
 
-
-
 # Partial Dependence Plot
 partialPlot(clf, Train.NoCurbRamp,ROBBERY, "1")
 
@@ -627,8 +630,6 @@ pred1=predict(clf,type = "prob",Test.NoCurbRamp)
 
 #Evaluate the performance of the random forest for classification.
 pred2 <- predict(clf,type = "prob",Test.NoCurbRamp)[,1]
-
-
 
 #prediction is ROCR function
 perf = prediction(pred2, Test.NoCurbRamp$NoCurbRamp.C)
@@ -711,7 +712,6 @@ for (i in 1:(ncol(Train.Occlusion) - 1))
   partialPlot(clf, Train.Occlusion, names(Train.Occlusion)[i], xlab = names(Train.Occlusion)[i],
               main = NULL);
 }
-
 
 # Importances scaled to 100
 imp4 <- (as.data.frame(clf$importanceSD)[1])*100/sum(as.data.frame(clf$importanceSD)[1])
@@ -870,6 +870,6 @@ imp6
 sum(Test.CurbRamp$CurbRamp.C==predict(clf, Test.CurbRamp[cols])) / nrow(Test.CurbRamp)
 
 
-
+# Thank You #
 ################################################################################################################
 
