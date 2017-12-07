@@ -1,32 +1,10 @@
-Contains data sets for project sidewalk
+Comparative Study: Reducing Cost to Manage Accessibility with Existing Data
+Datasets Required for Research Analysis
 
-file name convention : geocoded_#####-#####
+Below is the file name and a short description of the file
 
-
-CRIME STAT BREAKOUT
-1-2500: NA: NOT DONE YET ! ! ! !
-
-7502-10001 : BILL - DONE
-
-10002-12501 : NATHAN - DONE
-
-12502-15001 : CLAIRE - DONE
-
-15002-17501 : CHRIS -DONE
-
-17502-20001 : BILL - DONE
-
-20002-22501 : NATHAN - DONE
-
-22502-25001 : CLAIRE - DONE
-
-25002-27501 : CHRIS - DONE
-
-27502-30001 : BILL - DONE
-
-30002-32501 : NATHAN - DONE
-
-32502-35001 : CLAIRE - DONE
-
-350002-end : CHRIS - DONE
-
+Combined_2501-END.csv: Completed Crime Dataset with LAT&LONG input
+Final_Merged_Housing_data_8.29.17.csv: "Project Sidewalk" data merged with Zillow.org housing prices
+Final_Sidewalk_Data.csv: Crime Dataset merged Sidewalk data
+Neighborhood_MedianValuePerSqft_AllHomes_DC.csv: Completed Zillow.org Housing Prices
+neighborhood.csv: Completed "Project Sidewalk" data organized by neighborhood
