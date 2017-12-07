@@ -1,1 +1,3 @@
-these are the generic docs required for the capstone project at the DS@SMU program
+# Comparative Study: Reducing Cost to Manage Accessibility with Existing Data
+
+### These are the generic documents required for the Capstone Project at the MSDS@SMU program
